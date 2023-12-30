@@ -1,5 +1,40 @@
 #include "imports/stdlib.fc";
 
-() recv_internal(int my_balance, int msg_value, cell in_msg_full, slice in_msg_body) impure {
+() recv_internal(slice in_msg) impure {
+  ;; do nothing for internal messages
+}
 
+() recv_external(slice in_msg) impure {
+  var op = in_msg~load_bits(32);
+  var query_id = in_msg~load_bits(64);
+  var storage = begin_parse(get_data());
+  var public_key = storage~load_uint(256);
+  var execution_time = storage~load_uint(32);
+  var receiver = storage~load_bits(256 + 8 + 3);
+  var seqno = storage~load_uint(32);
+  if (op == 0x9df10277) {
+    ;; update
+    var signature = in_msg~load_bits(512);
+    var signed_body = in_msg~load_ref();
+    var locked_for = signed_body~load_uint(32);
+    var new_seqno = signed_body~load_uint(32);
+    throw_unless(119, new_seqno == seqno + 1);
+    throw_unless(120, check_signature(slice_hash(signed_body), signature, public_key));
+    throw_unless(121, locked_for > 0);
+    throw_unless(122, execution_time >= now());
+    throw_unless(123, now() + locked_for >= execution_time);
+    set_data(begin_cell().store_slice(public_key).store_uint(now() + locked_for, 32).store_slice(receiver, 256 + 8 + 3).store_uint(new_seqno, 32).end_cell());
+  } elseif (op == 0xbb4be234) {
+    ;; claim
+    throw_unless(124, execution_time < now());
+    var msg = begin_cell()
+        .store_uint(0x18, 6)
+        .store_slice(receiver)
+        .store_coins(0)
+        .store_uint(0, 1 + 4 + 4 + 64 + 32 + 1 + 1)
+        .end_cell();
+    send_raw_message(msg, 128);
+  } else {
+    throw(100);
+  }
 }
