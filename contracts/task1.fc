@@ -5,8 +5,8 @@
 }
 
 () recv_external(slice in_msg) impure {
-  var op = in_msg~load_bits(32);
-  var query_id = in_msg~load_bits(64);
+  var op = in_msg~load_uint(32);
+  in_msg~skip_bits(64);
   var storage = begin_parse(get_data());
   var public_key = storage~load_uint(256);
   var execution_time = storage~load_uint(32);
