@@ -9,18 +9,17 @@
     in_msg~skip_bits(64);
     var storage = begin_parse(get_data());
     if (op == 0x9df10277) { ;; update
-        var signed_body = begin_parse(in_msg~load_ref());
-        var hash = slice_hash(signed_body);
+        var signed_body = in_msg~load_ref();
+        var hash = cell_hash(signed_body);
+        var signed_body = begin_parse(signed_body);
         var locked_for = signed_body~load_uint(32);
         var new_seqno = signed_body~load_uint(32);
         var public_key = storage~load_uint(256);
         var execution_time = storage~load_uint(32);
         var receiver = storage~load_bits(256 + 8 + 3);
-        var seqno = storage~load_uint(32);
-        throw_unless(119, new_seqno == seqno + 1);
-        var signature = in_msg~load_bits(512);
-        throw_unless(120, check_signature(hash, signature, public_key));
+        throw_unless(119, new_seqno == storage~load_uint(32) + 1);
         accept_message();
+        throw_unless(120, check_signature(hash, in_msg~load_bits(512), public_key));
         throw_unless(121, locked_for > 0);
         throw_unless(122, execution_time >= now());
         throw_unless(123, now() + locked_for >= execution_time);
