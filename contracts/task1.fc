@@ -23,7 +23,7 @@
     throw_unless(121, locked_for > 0);
     throw_unless(122, execution_time >= now());
     throw_unless(123, now() + locked_for >= execution_time);
-    set_data(begin_cell().store_slice(public_key).store_uint(now() + locked_for, 32).store_slice(receiver, 256 + 8 + 3).store_uint(new_seqno, 32).end_cell());
+    set_data(begin_cell().store_uint(public_key, 256).store_uint(now() + locked_for, 32).store_slice(receiver, 256 + 8 + 3).store_uint(new_seqno, 32).end_cell());
   } elseif (op == 0xbb4be234) {
     ;; claim
     throw_unless(124, execution_time < now());
