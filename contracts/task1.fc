@@ -1,42 +1,44 @@
 #include "imports/stdlib.fc";
 
 () recv_internal(slice in_msg) impure {
-  ;; do nothing for internal messages
+    ;; do nothing for internal messages
 }
 
 () recv_external(slice in_msg) impure {
-  var op = in_msg~load_uint(32);
-  in_msg~skip_bits(64);
-  var storage = begin_parse(get_data());
-  var public_key = storage~load_uint(256);
-  var execution_time = storage~load_uint(32);
-  var receiver = storage~load_bits(256 + 8 + 3);
-  var seqno = storage~load_uint(32);
-  if (op == 0x9df10277) {
-    ;; update
-    var signature = in_msg~load_bits(512);
-    var signed_body = begin_parse(in_msg~load_ref());
-    var locked_for = signed_body~load_uint(32);
-    var new_seqno = signed_body~load_uint(32);
-    throw_unless(119, new_seqno == seqno + 1);
-    throw_unless(120, check_signature(slice_hash(signed_body), signature, public_key));
-    throw_unless(121, locked_for > 0);
-    throw_unless(122, execution_time >= now());
-    throw_unless(123, now() + locked_for >= execution_time);
-    accept_message();
-    set_data(begin_cell().store_uint(public_key, 256).store_uint(now() + locked_for, 32).store_slice(receiver).store_uint(new_seqno, 32).end_cell());
-  } elseif (op == 0xbb4be234) {
-    ;; claim
-    throw_unless(124, execution_time < now());
-    accept_message();
-    var msg = begin_cell()
+    var op = in_msg~load_uint(32);
+    in_msg~skip_bits(64);
+    var storage = begin_parse(get_data());
+    if (op == 0x9df10277) { ;; update
+        var signed_body = begin_parse(in_msg~load_ref());
+        var hash = slice_hash(signed_body);
+        var locked_for = signed_body~load_uint(32);
+        var new_seqno = signed_body~load_uint(32);
+        var public_key = storage~load_uint(256);
+        var execution_time = storage~load_uint(32);
+        var receiver = storage~load_bits(256 + 8 + 3);
+        var seqno = storage~load_uint(32);
+        throw_unless(119, new_seqno == seqno + 1);
+        var signature = in_msg~load_bits(512);
+        throw_unless(120, check_signature(hash, signature, public_key));
+        accept_message();
+        throw_unless(121, locked_for > 0);
+        throw_unless(122, execution_time >= now());
+        throw_unless(123, now() + locked_for >= execution_time);
+        set_data(begin_cell().store_uint(public_key, 256).store_uint(now() + locked_for, 32).store_slice(receiver).store_uint(new_seqno, 32).end_cell());
+    } elseif (op == 0xbb4be234) { ;; claim
+        storage~skip_bits(256);
+        var execution_time = storage~load_uint(32);
+        throw_unless(124, execution_time < now());
+        accept_message();
+        var receiver = storage~load_bits(256 + 8 + 3);
+        var msg = begin_cell()
         .store_uint(0x18, 6)
         .store_slice(receiver)
         .store_coins(0)
         .store_uint(0, 1 + 4 + 4 + 64 + 32 + 1 + 1)
         .end_cell();
-    send_raw_message(msg, 128);
-  } else {
-    throw(100);
-  }
+        send_raw_message(msg, 128);
+    } else {
+        throw(100);
+    }
 }

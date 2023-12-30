@@ -49,4 +49,12 @@ describe('Task1', () => {
             to: Address.parseFriendly("EQC38-cbo1HivDOdH0oOzyZfTKVpSkatn1ydXJYsrg5KvLNI").address
         })
     });
+
+    it('should update', async () => {
+        const res = await task1.sendUpdate("06aa52e6f0324fa8fb7e5a2a41153264aea2901de57a2c3d72e151e0f74ef01f06aa52e6f0324fa8fb7e5a2a41153264aea2901de57a2c3d72e151e0f74ef01f", 100, 1);
+        
+        expect(res.transactions).toHaveTransaction({
+            success: true
+        })
+    })
 });
