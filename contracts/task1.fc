@@ -15,7 +15,7 @@
   if (op == 0x9df10277) {
     ;; update
     var signature = in_msg~load_bits(512);
-    var signed_body = in_msg~load_ref();
+    var signed_body = begin_parse(in_msg~load_ref());
     var locked_for = signed_body~load_uint(32);
     var new_seqno = signed_body~load_uint(32);
     throw_unless(119, new_seqno == seqno + 1);
