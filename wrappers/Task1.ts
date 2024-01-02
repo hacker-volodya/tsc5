@@ -1,5 +1,5 @@
 import { Address, beginCell, Cell, Contract, contractAddress, ContractProvider, Sender, SendMode } from 'ton-core';
-import { keyPairFromSecretKey } from 'ton-crypto';
+import { KeyPair, keyPairFromSecretKey, sha256, sign, signVerify } from 'ton-crypto';
 
 export type Task1Config = {
     publicKey: string,
@@ -38,8 +38,12 @@ export class Task1 implements Contract {
         });
     }
 
-    async sendUpdate(provider: ContractProvider, signature: string, lockedFor: number, newSeqno: number) {
-        await provider.external(beginCell().storeUint(0x9df10277, 32).storeUint(0, 64).storeBuffer(Buffer.from(signature, 'hex')).storeRef(beginCell().storeUint(lockedFor, 32).storeUint(newSeqno, 32).endCell()).endCell())
+    async sendUpdate(provider: ContractProvider, keyPair: KeyPair, lockedFor: number, newSeqno: number) {
+        const signedData = beginCell().storeUint(lockedFor, 32).storeUint(newSeqno, 32).endCell();
+        const dataHash = signedData.hash();
+        const signature = sign(dataHash, keyPair.secretKey);
+        console.log(signVerify(dataHash, signature, keyPair.publicKey));
+        await provider.external(beginCell().storeUint(0x9df10277, 32).storeUint(0, 64).storeBuffer(signature).storeRef(signedData).endCell())
     }
 
     async sendClaim(provider: ContractProvider) {

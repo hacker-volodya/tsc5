@@ -3,6 +3,7 @@ import { Address, Cell, toNano } from 'ton-core';
 import { Task1 } from '../wrappers/Task1';
 import '@ton-community/test-utils';
 import { compile } from '@ton-community/blueprint';
+import { KeyPair, keyPairFromSecretKey, keyPairFromSeed } from 'ton-crypto';
 
 describe('Task1', () => {
     let code: Cell;
@@ -13,13 +14,30 @@ describe('Task1', () => {
 
     let blockchain: Blockchain;
     let task1: SandboxContract<Task1>;
+    let task1Claimable: SandboxContract<Task1>;
+
+    let keyPair = keyPairFromSeed(Buffer.from("0011223344556677889900112233445566778899001122334455667788990011", "hex"));
 
     beforeEach(async () => {
         blockchain = await Blockchain.create();
 
+        blockchain.verbosity = {
+            blockchainLogs: true,
+            vmLogs: 'vm_logs_full',
+            debugLogs: true,
+            print: true
+        }
+
         task1 = blockchain.openContract(Task1.createFromConfig({
-            publicKey: '06aa52e6f0324fa8fb7e5a2a41153264aea2901de57a2c3d72e151e0f74ef01f',
-            executionTime: 123,
+            publicKey: keyPair.publicKey.toString('hex'),
+            executionTime: 3000000000,
+            receiver: Address.parseFriendly("EQC38-cbo1HivDOdH0oOzyZfTKVpSkatn1ydXJYsrg5KvLNI").address,
+            seqno: 0
+        }, code));
+
+        task1Claimable = blockchain.openContract(Task1.createFromConfig({
+            publicKey: keyPair.publicKey.toString('hex'),
+            executionTime: 1,
             receiver: Address.parseFriendly("EQC38-cbo1HivDOdH0oOzyZfTKVpSkatn1ydXJYsrg5KvLNI").address,
             seqno: 0
         }, code));
@@ -27,10 +45,18 @@ describe('Task1', () => {
         const deployer = await blockchain.treasury('deployer');
 
         const deployResult = await task1.sendDeploy(deployer.getSender(), toNano('0.05'));
+        const deployResult2 = await task1Claimable.sendDeploy(deployer.getSender(), toNano('0.05'));
 
         expect(deployResult.transactions).toHaveTransaction({
             from: deployer.address,
             to: task1.address,
+            deploy: true,
+            success: true,
+        });
+
+        expect(deployResult2.transactions).toHaveTransaction({
+            from: deployer.address,
+            to: task1Claimable.address,
             deploy: true,
             success: true,
         });
@@ -42,16 +68,16 @@ describe('Task1', () => {
     });
 
     it('should claim', async () => {
-        const res = await task1.sendClaim();
+        const res = await task1Claimable.sendClaim();
         
         expect(res.transactions).toHaveTransaction({
-            from: task1.address,
+            from: task1Claimable.address,
             to: Address.parseFriendly("EQC38-cbo1HivDOdH0oOzyZfTKVpSkatn1ydXJYsrg5KvLNI").address
         })
     });
 
     it('should update', async () => {
-        const res = await task1.sendUpdate("06aa52e6f0324fa8fb7e5a2a41153264aea2901de57a2c3d72e151e0f74ef01f06aa52e6f0324fa8fb7e5a2a41153264aea2901de57a2c3d72e151e0f74ef01f", 100, 1);
+        const res = await task1.sendUpdate(keyPair, 2000000000, 1);
         
         expect(res.transactions).toHaveTransaction({
             success: true
