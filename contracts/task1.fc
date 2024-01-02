@@ -19,6 +19,8 @@
         var locked_for = signed_body~load_uint(32);
         var new_seqno = signed_body~load_uint(32);
         var signature = in_msg~load_bits(512);
+        end_parse(signed_body);
+        end_parse(in_msg);
         throw_unless(119, new_seqno == seqno + 1);
         throw_unless(120, check_signature(hash, signature, public_key));
         throw_unless(121, locked_for > 0);
@@ -27,7 +29,8 @@
         accept_message();
         set_data(begin_cell().store_uint(public_key, 256).store_uint(now() + locked_for, 32).store_slice(receiver).store_uint(new_seqno, 32).end_cell());
     } elseif (op == 0xbb4be234) { ;; claim
-        throw_unless(124, execution_time <= now());
+        end_parse(in_msg);
+        throw_unless(124, execution_time < now());
         accept_message();
         var msg = begin_cell()
         .store_uint(0x18, 6)
