@@ -20,7 +20,7 @@
         var seqno = storage~load_uint(32);
         throw_unless(119, new_seqno - seqno == 1);
         throw_unless(120, check_signature(hash, in_msg~load_bits(512), public_key));
-        throw_unless(121, locked_for > 0);
+        throw_unless(121, locked_for);
         var t = now();
         var new_execution_time = t + locked_for;
         throw_unless(122, execution_time >= t);
