@@ -35,8 +35,7 @@
         var msg = begin_cell()
         .store_uint(0x18, 6)
         .store_slice(storage~load_bits(256 + 8 + 3))
-        .store_coins(0)
-        .store_uint(0, 1 + 4 + 4 + 64 + 32 + 1 + 1)
+        .store_uint(0, 4 + 1 + 4 + 4 + 64 + 32 + 1 + 1)
         .end_cell();
         send_raw_message(msg, 128);
     } else {
