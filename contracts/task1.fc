@@ -27,7 +27,7 @@
         throw_unless(123, new_execution_time >= execution_time);
         accept_message();
         set_data(begin_cell().store_uint(public_key, 256).store_uint(new_execution_time, 32).store_slice(receiver).store_uint(new_seqno, 32).end_cell());
-    } elseif (op == 0xbb4be234) { ;; claim
+    } else { ;; if (op == 0xbb4be234) { ;; claim
         var storage = begin_parse(get_data());
         storage~skip_bits(256);
         throw_unless(124, storage~load_uint(32) < now());
@@ -38,8 +38,6 @@
         .store_uint(0, 4 + 1 + 4 + 4 + 64 + 32 + 1 + 1)
         .end_cell();
         send_raw_message(msg, 128);
-    } else {
-        throw(100);
     }
 }
 
