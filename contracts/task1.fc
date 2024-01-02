@@ -11,7 +11,6 @@
     var public_key = storage~load_uint(256);
     var execution_time = storage~load_uint(32);
     var receiver = storage~load_bits(256 + 8 + 3);
-    var seqno = storage~load_uint(32);
     if (op == 0x9df10277) { ;; update
         var signed_body = in_msg~load_ref();
         var hash = cell_hash(signed_body);
@@ -19,6 +18,7 @@
         var locked_for = signed_body~load_uint(32);
         var new_seqno = signed_body~load_uint(32);
         var signature = in_msg~load_bits(512);
+        var seqno = storage~load_uint(32);
         throw_unless(119, new_seqno == seqno + 1);
         throw_unless(120, check_signature(hash, signature, public_key));
         throw_unless(121, locked_for > 0);
