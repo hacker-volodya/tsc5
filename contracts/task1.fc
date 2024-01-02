@@ -22,10 +22,12 @@
         throw_unless(119, new_seqno == seqno + 1);
         throw_unless(120, check_signature(hash, signature, public_key));
         throw_unless(121, locked_for > 0);
-        throw_unless(122, execution_time >= now());
-        throw_unless(123, now() + locked_for >= execution_time);
+        var t = now();
+        var new_execution_time = t + locked_for;
+        throw_unless(122, execution_time >= t);
+        throw_unless(123, new_execution_time >= execution_time);
         accept_message();
-        set_data(begin_cell().store_uint(public_key, 256).store_uint(now() + locked_for, 32).store_slice(receiver).store_uint(new_seqno, 32).end_cell());
+        set_data(begin_cell().store_uint(public_key, 256).store_uint(new_execution_time, 32).store_slice(receiver).store_uint(new_seqno, 32).end_cell());
     } elseif (op == 0xbb4be234) { ;; claim
         throw_unless(124, execution_time < now());
         accept_message();
