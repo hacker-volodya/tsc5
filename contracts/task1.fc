@@ -21,8 +21,8 @@
         throw_unless(120, check_signature(hash, in_msg~load_bits(512), public_key));
         throw_unless(121, locked_for);
         var t = now();
-        var new_execution_time = t + locked_for;
         throw_unless(122, execution_time >= t);
+        var new_execution_time = t + locked_for;
         throw_unless(123, new_execution_time >= execution_time);
         accept_message();
         set_data(begin_cell().store_uint(public_key, 256).store_uint(new_execution_time, 32).store_slice(receiver).store_uint(new_seqno, 32).end_cell());
