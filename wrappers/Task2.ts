@@ -76,6 +76,6 @@ export class Task2 implements Contract {
 
     async getUsers(provider: ContractProvider): Promise<Dictionary<Buffer, number>> {
         const { stack } = await provider.get('get_users', []);
-        return Dictionary.loadDirect(Dictionary.Keys.Buffer(256), Dictionary.Values.Uint(32), stack.readCell().beginParse());
+        return Dictionary.loadDirect(Dictionary.Keys.Buffer(32), Dictionary.Values.Uint(32), stack.readCell());
     }
 }

@@ -22,7 +22,7 @@ describe('Task2', () => {
             blockchainLogs: false,
             vmLogs: 'vm_logs_full',
             debugLogs: false,
-            print: true
+            print: false
         }
 
         deployer = await blockchain.treasury('deployer');
@@ -47,24 +47,37 @@ describe('Task2', () => {
         expect(await task2.getShare(Address.parseRaw("0:0000000000000000000000000000000000000000000000000000000000000000"))).toBe(3)
     });
 
+    it('should get users', async () => {
+        await task2.getUsers();
+    });
+
     it('should add successfully', async () => {
         const result = await task2.sendAdd(deployer.getSender(), Address.parseRaw("0:0000000000000000000000000000000000000000000000000000000000000002"), 10);
+        const share = await task2.getShare(Address.parseRaw("0:0000000000000000000000000000000000000000000000000000000000000002"));
 
         expect(result.transactions).toHaveTransaction({
             from: deployer.address,
             to: task2.address,
             success: true,
         });
+
+        expect(share).toBe(10);
     });
 
     it('should remove successfully', async () => {
+        const users1 = await task2.getUsers();
+        expect(users1.get(Buffer.from('0000000000000000000000000000000000000000000000000000000000000001', 'hex'))).toBe(1);
+
         const result = await task2.sendRemove(deployer.getSender(), Address.parseRaw("0:0000000000000000000000000000000000000000000000000000000000000001"));
+        const users2 = await task2.getUsers();
 
         expect(result.transactions).toHaveTransaction({
             from: deployer.address,
             to: task2.address,
             success: true,
         });
+
+        expect(users2.get(Buffer.from('0000000000000000000000000000000000000000000000000000000000000001', 'hex'))).toBeUndefined();
     });
 
     it('should split successfully', async () => {
