@@ -4,6 +4,10 @@
     if (in_msg_body.slice_empty?()) {
         return ();
     }
+    int flags = in_msg_full.begin_parse().preload_uint(4);
+    if (flags & 1) {
+        return ();
+    }
     var op = in_msg_body~load_uint(32);
     var query_id = in_msg_body~load_uint(64);
     var storage = get_data().begin_parse();
