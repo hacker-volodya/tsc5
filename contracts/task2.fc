@@ -18,7 +18,10 @@
         set_data(begin_cell().store_slice(admin).store_dict(dict).end_cell());
     }
     if (op == 0x278205c8) { ;; remove user
-        var dict = storage~load_dict();
+        cell dict = new_dict();
+        if (~ slice_empty?(storage)) {
+            dict = storage~load_dict();
+        }
         (_, slice addr_from) = in_msg_full.begin_parse().skip_bits(4).load_msg_addr();
         throw_unless(120, equal_slice_bits(admin, addr_from));
         in_msg_body~skip_bits(3 + 8);
@@ -27,7 +30,10 @@
         set_data(begin_cell().store_slice(admin).store_dict(dict).end_cell());
     }
     if (op == 0x68530b3) { ;; split ton
-        var dict = storage~load_dict();
+        cell dict = new_dict();
+        if (~ slice_empty?(storage)) {
+            dict = storage~load_dict();
+        }
         (int key, slice val, int flag) = dict.udict_get_min?(256);
         throw_unless(122, flag);
         int sum = 0;
@@ -50,7 +56,10 @@
         }
     }
     if (op == 0x7362d09c) { ;; split jetton
-        var dict = storage~load_dict();
+        cell dict = new_dict();
+        if (~ slice_empty?(storage)) {
+            dict = storage~load_dict();
+        }
         (_, slice addr_from) = in_msg_full.begin_parse().skip_bits(4).load_msg_addr();
         var amount = in_msg_body~load_coins();
         (int key, slice val, int flag) = dict.udict_get_min?(256);
