@@ -5,7 +5,7 @@
         return ();
     }
     var op = in_msg_body~load_uint(32);
-    in_msg_body~skip_bits(64);
+    var query_id = in_msg_body~load_bits(64);
     var storage = get_data().begin_parse();
     var admin = storage~load_msg_addr();
     if (op == 0x368ddef3) {  ;; add user
@@ -67,7 +67,7 @@
             .store_coins(20000000)
             .store_uint(1, 1 + 4 + 4 + 64 + 32 + 1 + 1);
         var msg_body_start = begin_cell().store_uint(0x0f8a7ea5, 32)
-            .store_uint(0, 64);
+            .store_uint(query_id, 64);
         while (flag) {
             cell msg = msg_header.store_ref(msg_body_start
                 .store_coins(muldiv(val.preload_uint(32), amount, sum))
