@@ -14,6 +14,7 @@
         cell dict = storage~load_dict();
         in_msg_body~skip_bits(3 + 8);
         var address = in_msg_body~load_uint(256);
+        in_msg_body.skip_bits(32);
         dict~udict_set(256, address, in_msg_body);
         set_data(begin_cell().store_slice(admin).store_dict(dict).end_cell());
     }
