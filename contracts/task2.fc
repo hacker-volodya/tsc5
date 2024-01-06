@@ -91,11 +91,14 @@
 }
 
 cell get_users() method_id {
-    return get_data().begin_parse().preload_dict();
+    slice cs = get_data().begin_parse();
+    cs~skip_bits(256 + 8 + 3);
+    return cs.preload_dict();
 }
 
 int get_user_share(slice addr) method_id {
-    (_, int addr) = addr.parse_std_addr();
+    addr~skip_bits(3 + 8);
+    int addr = addr~load_uint(256);
     (slice val, _) = get_data().begin_parse().preload_dict().udict_get?(256, addr);
     return val.preload_uint(32);
 }
