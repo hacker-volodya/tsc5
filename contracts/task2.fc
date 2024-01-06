@@ -41,14 +41,14 @@
             sum += val.preload_uint(32);
             (key, val, flag) = dict.udict_get_next?(256, key);
         }
-        (key, val, flag) = dict.udict_get_min?(256);
         var msg_header = begin_cell()
             .store_uint(0x18, 6)
             .store_uint(0x400, 3 + 8);
+        (key, val, flag) = dict.udict_get_min?(256);
         while (flag) {
             cell msg = msg_header
                 .store_uint(key, 256)
-                .store_coins(val.preload_uint(32) * msg_value / sum)
+                .store_coins(muldiv(val.preload_uint(32), msg_value, sum))
                 .store_uint(0, 1 + 4 + 4 + 64 + 32 + 1 + 1)
                 .end_cell();
             send_raw_message(msg, 1);
@@ -74,12 +74,12 @@
             .store_uint(0x18, 6)
             .store_slice(addr_from)
             .store_coins(20000000)
-            .store_uint(0, 1 + 4 + 4 + 64 + 32 + 1 + 1)
-            .store_uint(0x0f8a7ea5, 32)
+            .store_uint(1, 1 + 4 + 4 + 64 + 32 + 1 + 1);
+        var msg_body_start = begin_cell().store_uint(0x0f8a7ea5, 32)
             .store_uint(0, 64);
         while (flag) {
-            cell msg = msg_header
-                .store_coins(val.preload_uint(32) * msg_value / sum)
+            cell msg = msg_header.store_ref(msg_body_start
+                .store_coins(muldiv(val.preload_uint(32), amount, sum))
                 .store_uint(0x400, 11)
                 .store_uint(key, 256)
                 .store_uint(0x400, 11)
@@ -87,7 +87,7 @@
                 .store_uint(0, 1)
                 .store_coins(1)
                 .store_uint(0, 1)
-                .end_cell();
+                .end_cell()).end_cell();
             send_raw_message(msg, 1);
             (key, val, flag) = dict.udict_get_next?(256, key);
         }
@@ -95,11 +95,11 @@
 }
 
 cell get_users() method_id {
-    return get_data().begin_parse().skip_bits(256 + 8 + 3).preload_dict();
+    return get_data().begin_parse().preload_dict();
 }
 
 int get_user_share(slice addr) method_id {
     (_, int addr) = addr.parse_std_addr();
-    (slice val, _) = get_data().begin_parse().skip_bits(256).preload_dict().udict_get?(256, addr);
+    (slice val, _) = get_data().begin_parse().preload_dict().udict_get?(256, addr);
     return val.preload_uint(32);
 }
