@@ -5,7 +5,7 @@
         return ();
     }
     var op = in_msg_body~load_uint(32);
-    var query_id = in_msg_body~load_bits(64);
+    var query_id = in_msg_body~load_uint(64);
     var storage = get_data().begin_parse();
     var admin = storage~load_msg_addr();
     if (op == 0x368ddef3) {  ;; add user
