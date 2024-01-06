@@ -1,5 +1,96 @@
 #include "imports/stdlib.fc";
 
 () recv_internal(int my_balance, int msg_value, cell in_msg_full, slice in_msg_body) impure {
+    var op = in_msg_body~load_uint(32);
+    in_msg_body~skip_bits(64);
+    var storage = get_data().begin_parse();
+    var admin = storage~load_msg_addr();
+    if (op == 0x368ddef3) {  ;; add user
+        (_, slice addr_from) = in_msg_full.begin_parse().skip_bits(4).load_msg_addr();
+        throw_unless(120, equal_slice_bits(admin, addr_from));
+        cell dict = new_dict();
+        if (~ slice_empty?(storage)) {
+            dict = storage~load_dict();
+        }
+        in_msg_body~skip_bits(3 + 8);
+        var address = in_msg_body~load_uint(256);
+        dict~udict_set(256, address, in_msg_body);
+        set_data(begin_cell().store_slice(admin).store_dict(dict).end_cell());
+    }
+    if (op == 0x278205c8) { ;; remove user
+        var dict = storage~load_dict();
+        (_, slice addr_from) = in_msg_full.begin_parse().skip_bits(4).load_msg_addr();
+        throw_unless(120, equal_slice_bits(admin, addr_from));
+        in_msg_body~skip_bits(3 + 8);
+        var address = in_msg_body~load_uint(256);
+        throw_unless(121, dict~udict_delete?(256, address));
+        set_data(begin_cell().store_slice(admin).store_dict(dict).end_cell());
+    }
+    if (op == 0x68530b3) { ;; split ton
+        var dict = storage~load_dict();
+        (int key, slice val, int flag) = dict.udict_get_min?(256);
+        throw_unless(122, flag);
+        int sum = 0;
+        while (flag) {
+            sum += val.preload_uint(32);
+            (key, val, flag) = dict.udict_get_next?(256, key);
+        }
+        (key, val, flag) = dict.udict_get_min?(256);
+        var msg_header = begin_cell()
+            .store_uint(0x18, 6)
+            .store_uint(0x400, 3 + 8);
+        while (flag) {
+            cell msg = msg_header
+                .store_uint(key, 256)
+                .store_coins(val.preload_uint(32) * msg_value / sum)
+                .store_uint(0, 1 + 4 + 4 + 64 + 32 + 1 + 1)
+                .end_cell();
+            send_raw_message(msg, 1);
+            (key, val, flag) = dict.udict_get_next?(256, key);
+        }
+    }
+    if (op == 0x7362d09c) { ;; split jetton
+        var dict = storage~load_dict();
+        (_, slice addr_from) = in_msg_full.begin_parse().skip_bits(4).load_msg_addr();
+        var amount = in_msg_body~load_coins();
+        (int key, slice val, int flag) = dict.udict_get_min?(256);
+        throw_unless(122, flag);
+        int sum = 0;
+        while (flag) {
+            sum += val.preload_uint(32);
+            (key, val, flag) = dict.udict_get_next?(256, key);
+        }
+        (key, val, flag) = dict.udict_get_min?(256);
+        var msg_header = begin_cell()
+            .store_uint(0x18, 6)
+            .store_slice(addr_from)
+            .store_coins(20000000)
+            .store_uint(0, 1 + 4 + 4 + 64 + 32 + 1 + 1)
+            .store_uint(0x0f8a7ea5, 32)
+            .store_uint(0, 64);
+        while (flag) {
+            cell msg = msg_header
+                .store_coins(val.preload_uint(32) * msg_value / sum)
+                .store_uint(0x400, 11)
+                .store_uint(key, 256)
+                .store_uint(0x400, 11)
+                .store_uint(key, 256)
+                .store_uint(0, 1)
+                .store_coins(1)
+                .store_uint(0, 1)
+                .end_cell();
+            send_raw_message(msg, 1);
+            (key, val, flag) = dict.udict_get_next?(256, key);
+        }
+    }
+}
 
+cell get_users() method_id {
+    return get_data().begin_parse().skip_bits(256 + 8 + 3).preload_dict();
+}
+
+int get_user_share(slice addr) method_id {
+    (_, int addr) = addr.parse_std_addr();
+    (slice val, _) = get_data().begin_parse().skip_bits(256).preload_dict().udict_get?(256, addr);
+    return val.preload_uint(32);
 }

@@ -22,10 +22,10 @@ describe('Task1', () => {
         blockchain = await Blockchain.create();
 
         blockchain.verbosity = {
-            blockchainLogs: true,
+            blockchainLogs: false,
             vmLogs: 'vm_logs_full',
-            debugLogs: true,
-            print: true
+            debugLogs: false,
+            print: false
         }
 
         task1 = blockchain.openContract(Task1.createFromConfig({
